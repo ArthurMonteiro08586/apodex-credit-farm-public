@@ -117,3 +117,27 @@ job_started → engine_route → start_of_workflow → title_updated → start_o
 - 429 на chat/stream — по IP ИЛИ по частоте акка; лечится ротацией пула
 - refresh_token одноразовый и тоже истекает → revive только через новый OTP (bridge_reauth)
 - heavy-модель (Deep Discover) недоступна free-аккам
+
+
+## 24/7 РЕЖИМ (keeper)
+
+Токены consumer-акков живут ~1 час. Чтобы шлюз работал без ручного вмешательства:
+
+```bash
+export GMAIL_USER=you@gmail.com GMAIL_APP_PASS=xxxx   # IMAP-почта для OTP
+python bridge_keeper.py     # цикл: каждые 40 мин гоняет bridge_reauth.py
+python apodex_bridge.py     # сам шлюз, hot-reload пула без рестарта
+```
+
+- keeper логирует `revived=N dead=M` за каждый прогон (~1.5 мин/акк)
+- bridge подхватывает новый accounts_web.json по mtime — рестарт НЕ нужен
+- KEEP_MINUTES=25 для более частого ревайта (под свой TTL)
+
+### Проверено live (2026-10-03)
+| тест | результат | пруф |
+|---|---|---|
+| standard non-stream | `"content": "STANDARD LIVE"` | 13.6s, 200 |
+| standard stream (SSE) | чанки delta.content | 200 |
+| pro deep-research (Telegram limits) | отчёт 3.8KB, 10336 chars reasoning | 70.6s, 200 |
+| /healthz | `{"total": 101, "alive": 85}` | ротация 401/429 работает |
+
