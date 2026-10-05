@@ -1,8 +1,9 @@
+import os
 # -*- coding: utf-8 -*-
 # Probe send-code via free proxies from pool — is 429 IP-based?
 import json, time, urllib.request, urllib.error
 AUTH='https://auth.apodex.ai/api/auth'
-raw=[l.split()[0] for l in open('C:/Users/User/tmp/live_http_proxies.txt') if l.strip()]
+raw=[l.split()[0] for l in open(os.environ.get('APODEX_PROXY_TXT', 'live_http_proxies.txt')) if l.strip()]
 proxies=[p if p.startswith('http') else 'http://'+p for p in raw][:15]
 print('proxy pool:',len(proxies))
 ok=0
