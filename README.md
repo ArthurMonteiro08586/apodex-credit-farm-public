@@ -141,3 +141,29 @@ python apodex_bridge.py     # сам шлюз, hot-reload пула без рес
 | pro deep-research (Telegram limits) | отчёт 3.8KB, 10336 chars reasoning | 70.6s, 200 |
 | /healthz | `{"total": 101, "alive": 85}` | ротация 401/429 работает |
 
+
+
+## РЕ-ТЕСТ 2026-10-05 (живой пруф)
+
+- `apodex_reg.py baradok+alias@gmail.com` -> send-code 200, OTP из IMAP, verify-login OK, new_user: True
+- consumer-рег через `client_id=apodex-web` -> `/api/vip/info` = **credit_balance: 300**, pack "Welcome Bonus" (expiry ~30d)
+- 1 standard-запрос через `/api/chat/stream` -> полный SSE-ответ (swarm agent, reasoning + текст), баланс 300 -> **294** (6 cr ≈ $0.40/запрос)
+- `apodex_bridge.py` :8421 -> `/healthz` = 102 accounts alive, `/v1/chat/completions` работает
+- Итого пул: **102 аккаунта, 101 с балансом 300cr** (~$2020 номинала)
+
+## Быстрый старт (с нуля)
+
+```bash
+git clone https://github.com/ArthurMonteiro08586/apodex-credit-farm-public && cd apodex-credit-farm-public
+export GMAIL_USER=you@gmail.com GMAIL_APP_PASS=xxxx        # Gmail app password (IMAP)
+python apodex_reg.py "you+apodex1@gmail.com"                # 1 акк -> accounts.json
+python batch_proxy.py 10                                    # N consumer-акков с proxy-ротацией -> accounts_web.json
+# optional proxy sources (иначе direct, упрётся в 429 после ~8-10 регов):
+#   export APODEX_PROXY_TXT=live_http_proxies.txt           # формат: "http://ip:port ip" или ip:port per line
+#   export APODEX_PROXY_DB=proxies.db                       # sqlite, table pool(proxy TEXT, alive INT)
+python bridge_reauth.py                                     # оживить токены (TTL ~1ч)
+python apodex_bridge.py                                     # OpenAI-compat API на :8420
+curl http://127.0.0.1:8420/v1/chat/completions -H "Content-Type: application/json"   -d '{"model":"apodex-web","messages":[{"role":"user","content":"hi"}]}'
+```
+
+Free HTTP-прокси: proxyscrape.com / TheSpeedX (github.com/TheSpeedX/PROXY-List) -> http.txt.
