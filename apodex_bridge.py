@@ -19,8 +19,8 @@ Model mapping (request "model"):
         apodex-web-pro      -> pro
         anything else       -> standard (override with ?mode=pro or body {"apodex_mode":"pro"})
 
-Run:    python apodex_bridge.py            (0.0.0.0:8420, pool accounts_web.json)
-Env:    BRIDGE_PORT, BRIDGE_POOL (path), BRIDGE_AUTH (optional Bearer for the front)
+Run:    python apodex_bridge.py            (127.0.0.1:8420, pool accounts_web.json)
+Env:    BRIDGE_HOST (default 127.0.0.1; 0.0.0.0 = LAN opt-in), BRIDGE_PORT, BRIDGE_POOL (path), BRIDGE_AUTH (optional Bearer for the front)
 """
 import json, os, sys, time, uuid, threading, urllib.request, urllib.error
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
@@ -351,8 +351,9 @@ class Handler(BaseHTTPRequestHandler):
             })
 
 def main():
-    srv = ThreadingHTTPServer(('0.0.0.0', PORT), Handler)
-    print(f'[bridge] OpenAI-compatible on http://0.0.0.0:{PORT}/v1  (pool: {len(POOL.accounts)} accounts)')
+    host = os.environ.get('BRIDGE_HOST', '127.0.0.1')  # loopback-by-default; BRIDGE_HOST=0.0.0.0 for LAN opt-in
+    srv = ThreadingHTTPServer((host, PORT), Handler)
+    print(f'[bridge] OpenAI-compatible on http://{host}:{PORT}/v1  (pool: {len(POOL.accounts)} accounts)')
     print('[bridge] models: apodex-web (standard), apodex-web-pro (deep research)')
     srv.serve_forever()
 
