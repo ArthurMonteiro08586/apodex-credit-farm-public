@@ -3,6 +3,10 @@
 # 429 is IP-based (proven by probe_proxy.py). Rotates proxies; parks limited ones.
 import json, time, sqlite3, sys, urllib.request, urllib.error
 import apodex_reg as ar
+import os as _os
+PROXY_TXT = _os.environ.get('APODEX_PROXY_TXT', 'live_http_proxies.txt')
+PROXY_DB  = _os.environ.get('APODEX_PROXY_DB', 'proxies.db')  # optional: sqlite pool table(proxy, alive)
+
 
 AUTH = 'https://auth.apodex.ai/api/auth'
 WWW = 'https://www.apodex.ai'
@@ -14,12 +18,12 @@ PARK_S = 180  # park a proxy after 429
 def load_pool():
     pool = []
     try:
-        for l in open('C:/Users/User/tmp/live_http_proxies.txt'):
+        for l in open(PROXY_TXT):
             p = l.split()[0].strip()
             if p: pool.append(p if p.startswith('http') else 'http://' + p)
     except Exception: pass
     try:
-        c = sqlite3.connect('file:C:/Users/User/Desktop/proxy_bot/proxies.db?mode=ro', uri=True)
+        c = sqlite3.connect(f'file:{PROXY_DB}?mode=ro', uri=True)
         for (purl,) in c.execute("SELECT proxy FROM pool WHERE alive=1"):
             if purl: pool.append(purl if purl.startswith('http') else 'http://' + purl)
         c.close()
